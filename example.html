@@ -65,6 +65,8 @@
   <script>
     var recorder;
 
+    var dataParty = [];
+
     start.addEventListener( "click", function(){ recorder.start(); });
     pause.addEventListener( "click", function(){ recorder.pause(); });
     resume.addEventListener( "click", function(){ recorder.resume(); });
@@ -79,7 +81,9 @@
         monitorGain: monitorGain.value,
         numberOfChannels: numberOfChannels.value,
         bitDepth: bitDepth.options[ bitDepth.selectedIndex ].value,
-        recordOpus: recordOpus.checked,
+        recordOpus: {
+          stream: true
+        },
         sampleRate: sampleRate.value
       });
 
@@ -93,6 +97,29 @@
         screenLogger('Recorder is stopped');
         init.disabled = start.disabled = false;
         pause.disabled = resume.disabled = stopButton.disabled = true;
+
+        setTimeout(function(){
+          var joinedBlob = new Blob(dataParty, { type: "audio/ogg" });
+          var fileName = new Date().toISOString() + ".ogg";
+          var url = URL.createObjectURL( joinedBlob );
+
+          var audio = document.createElement('audio');
+          audio.controls = true;
+          audio.src = url;
+
+          var link = document.createElement('a');
+          link.href = url;
+          link.download = fileName;
+          link.innerHTML = link.download;
+
+          var li = document.createElement('li');
+          li.appendChild(link);
+          li.appendChild(audio);
+
+          recordingslist.appendChild(li);
+
+          dataParty = [];
+        }, 2500);
       });
 
       recorder.addEventListener( "pause", function(e){
@@ -116,23 +143,7 @@
       });
 
       recorder.addEventListener( "dataAvailable", function(e){
-        var fileName = new Date().toISOString() + "." + e.detail.type.split("/")[1];
-        var url = URL.createObjectURL( e.detail );
-
-        var audio = document.createElement('audio');
-        audio.controls = true;
-        audio.src = url;
-
-        var link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        link.innerHTML = link.download;
-
-        var li = document.createElement('li');
-        li.appendChild(link);
-        li.appendChild(audio);
-
-        recordingslist.appendChild(li);
+        dataParty.push(e.detail);
       });
     });
 
